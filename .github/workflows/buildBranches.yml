@@ -19,7 +19,7 @@ on:
 env:
     FORCE_COLOR: true
     GITHUB_TOKEN: ${{ secrets.ETOKEN }}
-    REPO: Equicord/Equibuilds
+    REPO: acord-standalone/acord-client
     USERNAME: GitHub-Actions
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
     Build:
         name: Build Equicord
         runs-on: ubuntu-latest
-        if: github.repository == 'Equicord/Equicord'
+        if: github.repository == 'acord-standalone/acord-client'
 
         steps:
             - uses: actions/checkout@v6
@@ -63,6 +63,7 @@ jobs:
               run: |
                   pnpm generatePluginJson dist/plugins.json
                   pnpm generateEquicordPluginJson dist/equicordplugins.json
+                  pnpm generateAcordPluginJson dist/acordplugins.json
                   pnpm generateVencordPluginJson dist/vencordplugins.json
                   pnpm generateDevsList dist/devs.json
 
@@ -85,12 +86,13 @@ jobs:
             - name: Generate plugin lists
               if: github.ref_name == 'bun'
               run: |
-                  bun run generatePluginJson dist/plugins.json
-                  bun run generateEquicordPluginJson dist/equicordplugins.json
-                  bun run generateVencordPluginJson dist/vencordplugins.json
-                  bun run generateDevsList dist/devs.json
+                bun run generatePluginJson dist/plugins.json
+                bun run generateEquicordPluginJson dist/equicordplugins.json
+                bun run generateAcordPluginJson dist/acordplugins.json
+                bun run generateVencordPluginJson dist/vencordplugins.json
+                bun run generateDevsList dist/devs.json
 
-            - name: Upload to Equibuilds repo
+            - name: Upload to acordbuilds repo
               if: ${{ vars.ACT == 'false' }}
               run: |
                   BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
@@ -98,8 +100,8 @@ jobs:
 
                   git config --global user.name "GitHub-Actions"
                   git config --global user.email actions@github.com
-                  git clone https://$USERNAME:$GITHUB_TOKEN@github.com/$REPO.git equibuilds
-                  cd equibuilds
+                  git clone https://$USERNAME:$GITHUB_TOKEN@github.com/$REPO.git acordbuilds
+                  cd acordbuilds
 
                   if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
                       git checkout "$BRANCH"
@@ -111,7 +113,7 @@ jobs:
                   find . -size 0 -delete
 
                   mkdir -p userscript
-                  mv Equicord.user.* userscript/
+                  mv Acord.user.* userscript/
                   mv desktop.asar desktop/
                   mv equibop.asar equibop/
                   mv extension-*.zip browser/

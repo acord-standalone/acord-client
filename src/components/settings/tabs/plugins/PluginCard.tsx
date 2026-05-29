@@ -33,6 +33,7 @@ export function PluginCard({ plugin, disabled, onRestartNeeded, onMouseEnter, on
     const settings = Settings.plugins[plugin.name];
     const pluginMeta = PluginMeta[plugin.name];
     const isEquicordPlugin = pluginMeta.folderName.startsWith("src/equicordplugins/") ?? false;
+    const isAcordPlugin = pluginMeta.folderName.startsWith("src/acordplugins/") ?? false;
     const isVencordPlugin = pluginMeta.folderName.startsWith("src/plugins/") ?? false;
     const isUserPlugin = pluginMeta?.userPlugin ?? false;
     const isModifiedPlugin = plugin.isModified ?? false;
@@ -101,6 +102,12 @@ export function PluginCard({ plugin, disabled, onRestartNeeded, onMouseEnter, on
             src: "https://equicord.org/assets/favicon.png",
             alt: "Equicord",
             title: "Equicord Plugin"
+        },
+        {
+            condition: isAcordPlugin,
+            src: "https://raw.githubusercontent.com/acord-standalone/assets/refs/heads/main/logo/acord-circle.png",
+            alt: "Acord",
+            title: "Acord Plugin"
         },
         {
             condition: isVencordPlugin,

@@ -42,7 +42,7 @@ import { PluginMeta } from "~plugins";
 
 import { OptionComponentMap } from "./components";
 import { openContributorModal } from "./ContributorModal";
-import { GithubButton, WebsiteButton } from "./LinkIconButton";
+import { GithubButton } from "./LinkIconButton";
 
 const cl = classNameFactory("vc-plugin-modal-");
 
@@ -174,6 +174,7 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
 
     const pluginMeta = PluginMeta[plugin.name];
     const isEquicordPlugin = pluginMeta.folderName.startsWith("src/equicordplugins/") ?? false;
+    const isAcordPlugin = pluginMeta.folderName.startsWith("src/acordplugins/") ?? false;
 
     return (
         <Modal
@@ -217,7 +218,7 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
                                 renderUser={(user: User) => (
                                     <Clickable
                                         className={AvatarStyles.clickableAvatar}
-                                        onClick={() => isEquicordPlugin ? openContributorModal(user) : openContributorModal(user)}
+                                        onClick={() => openContributorModal(user)}
                                     >
                                         <img
                                             className={AvatarStyles.avatar}
@@ -258,10 +259,6 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
                         ) : <div />}
                         {!pluginMeta.userPlugin && (
                             <div className={cl("links")}>
-                                <WebsiteButton
-                                    text="Website"
-                                    href={isEquicordPlugin ? `https://equicord.org/plugins/${plugin.name}` : `https://vencord.dev/plugins/${plugin.name}`}
-                                />
                                 <GithubButton
                                     text="Source Code"
                                     href={`https://github.com/${gitRemote}/tree/main/${pluginMeta.folderName}`}

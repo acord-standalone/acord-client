@@ -105,7 +105,8 @@ const enum SearchStatus {
     VENCORD,
     NEW,
     USER_PLUGINS,
-    API_PLUGINS
+    API_PLUGINS,
+    ACORD
 }
 
 export const ExcludedReasons: Record<"web" | "discordDesktop" | "vesktop" | "equibop" | "desktop" | "dev", string> = {
@@ -219,6 +220,9 @@ export default function PluginSettings() {
                 break;
             case SearchStatus.EQUICORD:
                 if (!PluginMeta[plugin.name].folderName.startsWith("src/equicordplugins/")) return false;
+                break;
+            case SearchStatus.ACORD:
+                if (!PluginMeta[plugin.name].folderName.startsWith("src/acordplugins/")) return false;
                 break;
             case SearchStatus.VENCORD:
                 if (!PluginMeta[plugin.name].folderName.startsWith("src/plugins/")) return false;

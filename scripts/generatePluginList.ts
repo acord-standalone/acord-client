@@ -17,20 +17,23 @@
 */
 
 import { readdirSync, writeFileSync } from "fs";
-import { getEntryPoint, isPluginFile, parseDevs, parseEquicordDevs, parseFile, PluginData } from "./utils";
+import { acordDevs, getEntryPoint, isPluginFile, parseAcordDevs, parseDevs, parseEquicordDevs, parseFile, PluginData } from "./utils";
 
 (async () => {
     parseDevs();
     parseEquicordDevs();
+    parseAcordDevs();
 
     const args = process.argv.slice(2);
 
+    const acordFlag = args.includes("--acord");
     const equicordFlag = args.includes("--equicord");
     const vencordFlag = args.includes("--vencord");
 
     let dirs: string[];
-
-    if (equicordFlag) {
+    if (acordDevs) {
+        dirs = ["src/acordplugins/_core", "src/acordplugins"];
+    } else if (equicordFlag) {
         dirs = ["src/equicordplugins/_core", "src/equicordplugins"];
     } else if (vencordFlag) {
         dirs = ["src/plugins", "src/plugins/_core"];
