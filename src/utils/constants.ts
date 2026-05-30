@@ -1340,7 +1340,7 @@ export const EquicordDevs = Object.freeze({
 } satisfies Record<string, Dev>);
 
 export const AcordDevs = Object.freeze({
-    thearmagan: {
+    TheArmagan: {
         name: "thearmagan",
         id: 707309693449535599n
     }
