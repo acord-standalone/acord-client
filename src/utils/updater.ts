@@ -23,6 +23,8 @@ import { relaunch } from "./native";
 import { IpcRes } from "./types";
 
 export const UpdateLogger = /* #__PURE__*/ new Logger("Updater", "white");
+export const ACORD_GITHUB_REPO = "acord-standalone/acord-client";
+export const ACORD_GITHUB_REPO_URL = `https://github.com/${ACORD_GITHUB_REPO}`;
 export let isOutdated = false;
 export let isNewer = false;
 export let updateError: any;
@@ -65,7 +67,7 @@ export async function update() {
     return res;
 }
 
-export const getRepo = () => Unwrap(VencordNative.updater.getRepo());
+export const getRepo = async () => ACORD_GITHUB_REPO_URL;
 
 export async function maybePromptToUpdate(confirmMessage: string, checkForDev = false) {
     if (IS_WEB || IS_UPDATER_DISABLED) return;
