@@ -16,6 +16,7 @@ export type ScopeKind =
     | "nitro"
     | "shop"
     | "discover"
+    | "anyText"
     | "anyVoice"
     | "anyStage"
     | "anyForum"

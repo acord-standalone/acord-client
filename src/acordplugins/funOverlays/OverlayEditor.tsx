@@ -33,6 +33,7 @@ const SCOPE_OPTIONS: { value: ScopeKind; label: string; needsValue: boolean; pla
     { value: "nitro", label: "Nitro page", needsValue: false },
     { value: "shop", label: "Shop page", needsValue: false },
     { value: "discover", label: "Server discovery", needsValue: false },
+    { value: "anyText", label: "Any text channel", needsValue: false },
     { value: "anyVoice", label: "Any voice channel", needsValue: false },
     { value: "anyStage", label: "Any stage channel", needsValue: false },
     { value: "anyForum", label: "Any forum channel", needsValue: false },

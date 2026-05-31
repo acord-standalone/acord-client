@@ -33,6 +33,11 @@ export function matchScope(scope: Scope, ctx: RouteContext): boolean {
             return ctx.pathname.startsWith("/shop");
         case "discover":
             return ctx.pathname.startsWith("/guild-discovery") || ctx.pathname.startsWith("/discovery");
+        case "anyText": {
+            if (!ctx.channelId) return false;
+            const t = ChannelStore.getChannel(ctx.channelId)?.type;
+            return t === ChannelType.GUILD_TEXT || t === ChannelType.GUILD_ANNOUNCEMENT;
+        }
         case "anyVoice": {
             if (!ctx.channelId) return false;
             const t = ChannelStore.getChannel(ctx.channelId)?.type;
@@ -74,6 +79,7 @@ export function describeScope(scope: Scope): string {
         case "nitro": return "Nitro page";
         case "shop": return "Shop page";
         case "discover": return "Server discovery";
+        case "anyText": return "Any text channel";
         case "anyVoice": return "Any voice channel";
         case "anyStage": return "Any stage channel";
         case "anyForum": return "Any forum channel";
