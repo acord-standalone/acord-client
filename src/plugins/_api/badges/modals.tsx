@@ -9,7 +9,7 @@ import { Flex } from "@components/Flex";
 import { Heading } from "@components/Heading";
 import { Heart } from "@components/Heart";
 import { Paragraph } from "@components/Paragraph";
-import { DonateButton, TranslateButton } from "@components/settings";
+import { DonateButton } from "@components/settings";
 import { Margins } from "@utils/margins";
 import { Modal, openModal } from "@webpack/common";
 
@@ -165,11 +165,6 @@ export function EquicordTranslatorModal() {
                             Awarded to contributors who expand Equicord’s language support by translating content for the community.
                         </Paragraph>
                     </div>
-                </div>
-                <div>
-                    <Flex justifyContent="center" style={{ width: "100%" }}>
-                        <TranslateButton />
-                    </Flex>
                 </div>
             </Modal>
         </ErrorBoundary>
