@@ -9,7 +9,7 @@
 - No comments unless asked. Keep existing ones, they carry context.
 - Delete dead code. Don't comment out.
 - Natural human text in errors, descriptions, toasts. No dashes, no robotic phrasing. Descriptions start capitalized, end with period.
-- One-file plugin default. Split only past ~250 lines or when second file is genuinely reusable (`utils.ts`, `settings.ts`, `components/`).
+- One-file plugin default. Split only past ~350 lines or when second file is genuinely reusable (`utils.ts`, `settings.ts`, `components/`).
 - No abstraction for 1-2 call sites. Inline beats single-use hook. `createX` used once is just a function call.
 - Don't reimplement what `@webpack/common` or `@utils/*` exports. Search first.
 - Don't cache Discord data. Stores are source of truth, read on demand. Cache only what isn't in a store.
