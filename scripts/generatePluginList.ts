@@ -31,14 +31,14 @@ import { acordDevs, getEntryPoint, isPluginFile, parseAcordDevs, parseDevs, pars
     const vencordFlag = args.includes("--vencord");
 
     let dirs: string[];
-    if (acordDevs) {
+    if (acordFlag) {
         dirs = ["src/acordplugins/_core", "src/acordplugins"];
     } else if (equicordFlag) {
         dirs = ["src/equicordplugins/_core", "src/equicordplugins"];
     } else if (vencordFlag) {
         dirs = ["src/plugins", "src/plugins/_core"];
     } else {
-        dirs = ["src/plugins", "src/plugins/_core", "src/equicordplugins/_core", "src/equicordplugins"];
+        dirs = ["src/plugins", "src/plugins/_core", "src/equicordplugins/_core", "src/equicordplugins", "src/acordplugins/_core", "src/acordplugins"];
     }
 
     const outputPath = args.find(a => !a.startsWith("--")) ?? null;
