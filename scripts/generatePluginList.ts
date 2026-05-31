@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { readdirSync, writeFileSync } from "fs";
+import { existsSync, readdirSync, writeFileSync } from "fs";
 import { acordDevs, getEntryPoint, isPluginFile, parseAcordDevs, parseDevs, parseEquicordDevs, parseFile, PluginData } from "./utils";
 
 (async () => {
@@ -46,7 +46,7 @@ import { acordDevs, getEntryPoint, isPluginFile, parseAcordDevs, parseDevs, pars
     const plugins = [] as PluginData[];
 
     await Promise.all(
-        dirs.flatMap(dir =>
+        dirs.filter(dir => existsSync(dir)).flatMap(dir =>
             readdirSync(dir, { withFileTypes: true })
                 .filter(isPluginFile)
                 .map(async dirent => {
