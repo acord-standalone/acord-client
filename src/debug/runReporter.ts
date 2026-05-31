@@ -30,7 +30,7 @@ async function runReporter() {
             }
         }, "Equicord Reporter");
 
-        // @ts-expect-error
+        // @ts-ignore
         Vencord.Webpack._initReporter = function () {
             // initReporter is called in the patched entry point of Discord
             // setImmediate to only start searching for lazy chunks after Discord initialized the app

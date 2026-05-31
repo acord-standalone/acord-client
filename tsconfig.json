@@ -81,4 +81,12 @@
         "scripts/**/*",
         "eslint.config.mjs"
     ],
+    "exclude": [
+        "browser/browser.js",
+        "browser/extension.js",
+        "browser/chromium-unpacked",
+        "browser/firefox-unpacked",
+        "browser/vendor",
+        "dist"
+    ]
 }

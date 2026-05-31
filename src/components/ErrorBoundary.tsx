@@ -113,7 +113,7 @@ const ErrorBoundary = LazyComponent(() => {
                 </ErrorCard>
             );
         }
-    };
+    } as unknown as React.ComponentType<React.PropsWithChildren<Props>>;
 }) as
     LazyComponentWrapper<React.ComponentType<React.PropsWithChildren<Props>> & {
         wrap<T extends object = any>(Component: React.ComponentType<T>, errorBoundaryProps?: Omit<Props<T>, "wrappedProps"> & { displayName?: string; }): React.FunctionComponent<T>;
