@@ -82,6 +82,7 @@ const settings = definePluginSettings({
 
 const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { channel, user }: UserContextProps) => {
     if (UserStore.getCurrentUser().id === user.id) return;
+    if (children.some((c: any) => c?.props?.id === "fvu-follow-user")) return;
 
     const [checked, setChecked] = React.useState(followedUserInfo?.userId === user.id);
 
