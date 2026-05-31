@@ -21,6 +21,13 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
+            - name: Collect commit metadata
+              id: meta
+              run: |
+                  echo "commit_message=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+                  echo "commit_author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+                  echo "changed_files=$(git diff-tree --no-commit-id -r --name-only HEAD | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+
             - uses: pnpm/action-setup@v6
 
             - name: Use Node.js 24
@@ -54,15 +61,12 @@ jobs:
                   cp browser/browser.* release
                   cp Acord.user.{js,js.LEGAL.txt} release
 
-                  # copy the plugin data jsons, the extension zips and the desktop/equibop asars
-                  cp *.{json,zip,asar} release
+                  # plugin data jsons, extension zips and desktop asar
+                  cp *.{json,zip} release
+                  cp desktop.asar release
 
                   # legacy un-asared files
                   cp desktop/* release
-                  for file in equibop/*; do
-                    filename=$(basename "$file")
-                    cp "$file" "release/equibop${filename^}"
-                  done
 
                   find release -size 0 -delete
                   rm release/package.json
@@ -73,17 +77,11 @@ jobs:
               run: |
                   gh release upload latest --clobber dist/release/*
 
-            - name: Upload Plugin JSONs to Equibored repo
-              if: github.repository == 'acord-standalone/acord-client' && vars.ACT == 'false'
-              run: |
-                  git config --global user.name "GitHub-Actions"
-                  git config --global user.email actions@github.com
-                  git clone https://$USERNAME:$GITHUB_TOKEN@github.com/$REPO.git plugins
-                  cd plugins
-
-                  cp ../dist/release/*plugins.json .
-                  cp ../dist/release/devs.json .
-                  git add -A
-
-                  git commit -m "Plugins for https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA"
-                  git push --force https://$USERNAME:$GITHUB_TOKEN@github.com/$REPO.git
+            - name: Notify Discord
+              if: ${{ vars.ACT == 'false' }}
+              env:
+                  WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+                  CHANGED_FILES: ${{ steps.meta.outputs.changed_files }}
+                  COMMIT_MESSAGE: ${{ steps.meta.outputs.commit_message }}
+                  COMMIT_AUTHOR: ${{ steps.meta.outputs.commit_author }}
+              run: node scripts/notifyBuild.mjs

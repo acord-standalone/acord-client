@@ -115,7 +115,6 @@ jobs:
                   mkdir -p userscript
                   mv Acord.user.* userscript/
                   mv desktop.asar desktop/
-                  mv equibop.asar equibop/
                   mv extension-*.zip browser/
 
                   git add -A
