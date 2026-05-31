@@ -27,7 +27,7 @@ permissions:
 
 jobs:
     Build:
-        name: Build Equicord
+        name: Build Acord
         runs-on: ubuntu-latest
         if: github.repository == 'acord-standalone/acord-client'
 
