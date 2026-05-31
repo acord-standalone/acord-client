@@ -75,7 +75,13 @@ jobs:
             - name: Upload Acord Stable
               if: ${{ vars.ACT == 'false' }}
               run: |
-                  gh release upload latest --clobber dist/release/desktop.asar
+                  gh release upload latest --clobber \
+                    dist/release/desktop.asar \
+                    dist/release/devs.json \
+                    dist/release/plugins.json \
+                    dist/release/equicordplugins.json \
+                    dist/release/acordplugins.json \
+                    dist/release/vencordplugins.json
 
             - name: Notify Discord
               if: ${{ vars.ACT == 'false' }}

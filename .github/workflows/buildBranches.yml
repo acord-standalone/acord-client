@@ -95,4 +95,10 @@ jobs:
             - name: Upload Acord Build
               if: ${{ vars.ACT == 'false' }}
               run: |
-                  gh release upload latest --clobber dist/desktop.asar
+                  gh release upload latest --clobber \
+                    dist/desktop.asar \
+                    dist/devs.json \
+                    dist/plugins.json \
+                    dist/equicordplugins.json \
+                    dist/acordplugins.json \
+                    dist/vencordplugins.json
