@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { addMessagePreSendListener, type MessageSendListener, removeMessagePreSendListener } from "@api/MessageEvents";
 import { definePluginSettings } from "@api/Settings";
+import { Button } from "@components/Button";
 import { ErrorBoundary } from "@components/index";
 import { AcordDevs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
-import { Button, React, TextInput, useState } from "@webpack/common";
+import { React, TextInput, useState } from "@webpack/common";
 
 // Invisible characters to insert between letters (randomly picked each time)
 const INVISIBLE_CHARS = [
@@ -74,7 +74,7 @@ function WordListSettings() {
                     onKeyDown={e => { if (e.key === "Enter") addWord(); }}
                     style={{ flex: 1 }}
                 />
-                <Button onClick={addWord} size={Button.Sizes.SMALL}>Add</Button>
+                <Button onClick={addWord} size="small">Add</Button>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {list.length === 0 && (
@@ -115,19 +115,12 @@ const settings = definePluginSettings({
     },
 });
 
-let preSendListener: MessageSendListener;
-
 export default definePlugin({
     name: "GoodWords",
     description: "Inserts invisible characters between letters of configured words before sending, bypassing word filters.",
     authors: [AcordDevs.TheArmagan],
     settings,
-    start() {
-        preSendListener = addMessagePreSendListener((_channelId, msg) => {
-            msg.content = applyObfuscation(msg.content);
-        });
-    },
-    stop() {
-        removeMessagePreSendListener(preSendListener);
+    onBeforeMessageSend(_channelId, msg) {
+        msg.content = applyObfuscation(msg.content);
     }
 });
