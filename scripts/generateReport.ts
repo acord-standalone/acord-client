@@ -204,7 +204,8 @@ async function printReport() {
 
         const body = JSON.stringify({
             username: "Acord Reporter" + (CANARY ? " (Canary)" : ""),
-            embeds
+            embeds,
+            avatar_url: "https://raw.githubusercontent.com/acord-standalone/acord-client/main/browser/icon.png"
         });
 
         const headers = {
