@@ -173,6 +173,8 @@ export const UserArea = $UserArea;
  */
 export const isEquicord = true;
 
+export const isAcord = true;
+
 /**
  * An API allowing you to add other collections where discords game collection is.
  */

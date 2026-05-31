@@ -86,9 +86,9 @@ function VoiceDurationModal({ guild, ...modalProps }: { guild: Guild; transition
 
     const sortChannels = (chs: any[]) =>
         [...chs].sort((a, b) => {
-            const aL = data[a.id]?.lastJoined ?? 0;
-            const bL = data[b.id]?.lastJoined ?? 0;
-            if (aL !== bL) return bL - aL;
+            const aMs = (data[a.id]?.totalMs ?? 0) + (session?.channelId === a.id ? sessionMs : 0);
+            const bMs = (data[b.id]?.totalMs ?? 0) + (session?.channelId === b.id ? sessionMs : 0);
+            if (aMs !== bMs) return bMs - aMs;
             return (a.position_ ?? 0) - (b.position_ ?? 0);
         });
 
