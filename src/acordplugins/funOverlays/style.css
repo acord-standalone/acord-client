@@ -1,0 +1,14 @@
+.vc-fun-overlay-item {
+  will-change: transform, left, top, width, height;
+}
+
+#vc-fun-overlays-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+}
+
+#vc-fun-overlays-root > * {
+  pointer-events: auto;
+}
