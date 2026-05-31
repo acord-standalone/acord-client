@@ -12,13 +12,6 @@ import { Alerts, ChannelActions, GuildChannelStore, Menu, PermissionsBits, Permi
 
 import { openAdvancedModal, openDistributeModal } from "./AdvancedModal";
 
-/** channelId -> { keepMute, keepDeafen } */
-const keepStates: Record<string, { mute: boolean; deaf: boolean; }> = {};
-
-function getKeep(channelId: string) {
-    return keepStates[channelId] ?? { mute: false, deaf: false };
-}
-
 interface VoiceChannelContextProps {
     channel: Channel;
 }
@@ -161,40 +154,6 @@ const ChannelContextPatch: NavContextMenuPatchCallback = (children, { channel }:
         );
     }
 
-    if (canMute) {
-        const [keepMute, setKeepMute] = React.useState(getKeep(channel.id).mute);
-        items.push(
-            <Menu.MenuCheckboxItem
-                key="mass-actions-keep-mute"
-                id="mass-actions-keep-mute"
-                label="Keep muted"
-                checked={keepMute}
-                action={() => {
-                    const next = !getKeep(channel.id).mute;
-                    keepStates[channel.id] = { ...getKeep(channel.id), mute: next };
-                    setKeepMute(next);
-                }}
-            />
-        );
-    }
-
-    if (canDeafen) {
-        const [keepDeaf, setKeepDeaf] = React.useState(getKeep(channel.id).deaf);
-        items.push(
-            <Menu.MenuCheckboxItem
-                key="mass-actions-keep-deaf"
-                id="mass-actions-keep-deaf"
-                label="Keep deafened"
-                checked={keepDeaf}
-                action={() => {
-                    const next = !getKeep(channel.id).deaf;
-                    keepStates[channel.id] = { ...getKeep(channel.id), deaf: next };
-                    setKeepDeaf(next);
-                }}
-            />
-        );
-    }
-
     if (canMove && voiceChannels.length > 0) {
         items.push(
             <Menu.MenuItem
@@ -275,37 +234,6 @@ export default definePlugin({
     name: "MassActions",
     description: "Adds mass voice actions to voice channel context menus. Mute, deafen, or move all users at once.",
     authors: [AcordDevs.TheArmagan],
-    flux: {
-        async VOICE_STATE_UPDATES({ voiceStates }: { voiceStates: Array<{ userId: string; channelId?: string | null; guildId?: string; mute?: boolean; deaf?: boolean; }>; }) {
-            const myId = UserStore.getCurrentUser()?.id;
-            for (const state of voiceStates) {
-                if (!state.guildId || !state.channelId) continue;
-                if (state.userId === myId) continue;
-
-                const keep = getKeep(state.channelId);
-                const body: Record<string, boolean> = {};
-
-                if (keep.mute && state.mute === false) body.mute = true;
-                if (keep.deaf && state.deaf === false) body.deaf = true;
-
-                if (Object.keys(body).length === 0) continue;
-
-                // Verify we still have permission
-                const ch = { id: state.channelId, guild_id: state.guildId } as Channel;
-                if (keep.mute && !PermissionStore.can(PermissionsBits.MUTE_MEMBERS, ch)) delete body.mute;
-                if (keep.deaf && !PermissionStore.can(PermissionsBits.DEAFEN_MEMBERS, ch)) delete body.deaf;
-                if (Object.keys(body).length === 0) continue;
-
-                await RestAPI.patch({
-                    url: `/guilds/${state.guildId}/members/${state.userId}`,
-                    body
-                }).catch(() => { });
-            }
-        }
-    },
-    stop() {
-        for (const k of Object.keys(keepStates)) delete keepStates[k];
-    },
     contextMenus: {
         "channel-context": ChannelContextPatch
     }
