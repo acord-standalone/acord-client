@@ -23,6 +23,9 @@ const VoiceStateStore = findStoreLazy("VoiceStateStore");
 const UserStore = findStoreLazy("UserStore");
 
 const ChannelContextMenuPatch: NavContextMenuPatchCallback = (children, { channel }: ChannelContextProps) => {
+    // voice (2) and stage (13) channels only — there's nothing to "join" elsewhere
+    if (!channel || (channel.type !== 2 && channel.type !== 13)) return;
+
     const [checked, setChecked] = React.useState(channel.id === targetChannelId);
 
     children.push(

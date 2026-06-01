@@ -6,14 +6,15 @@
 
 import { generateId, sendBotMessage } from "@api/Commands";
 import type { Message, MessageAttachment, User } from "@vencord/discord-types";
-import { FluxDispatcher, MessageActions, MessageStore } from "@webpack/common";
+import { FluxDispatcher, SnowflakeUtils } from "@webpack/common";
 
 /**
- * The merged message object we handed to the store, kept per channel so we can
- * re-add it whenever Discord refetches that channel (which would otherwise wipe
- * these local-only messages from the store).
+ * Raw-ish message JSON for every fake message we've injected, keyed by channel.
+ * We keep the raw shape (not the store record) so we can splice it back into the
+ * array Discord builds on LOAD_MESSAGES_SUCCESS, landing it at the right
+ * chronological position instead of being forced to the bottom by MESSAGE_CREATE.
  */
-const fakeMessagesByChannel = new Map<string, Map<string, Message>>();
+const fakeMessagesByChannel = new Map<string, Map<string, any>>();
 
 export function isFakeMessage(id: string) {
     for (const messages of fakeMessagesByChannel.values())
@@ -21,10 +22,16 @@ export function isFakeMessage(id: string) {
     return false;
 }
 
-function track(channelId: string, message: Message) {
+/** Snapshot of the fake messages tracked for a channel (used by the fetch patch). */
+export function getFakeMessages(channelId: string): any[] {
+    const messages = fakeMessagesByChannel.get(channelId);
+    return messages ? [...messages.values()] : [];
+}
+
+function track(channelId: string, raw: any) {
     let messages = fakeMessagesByChannel.get(channelId);
     if (!messages) fakeMessagesByChannel.set(channelId, messages = new Map());
-    messages.set(message.id, message);
+    messages.set(raw.id, raw);
 }
 
 /** Locally removes a fake message from its channel and stops re-adding it. */
@@ -36,24 +43,6 @@ export function deleteFakeMessage(channelId: string, id: string) {
         id,
         mlDeleted: true,
     });
-}
-
-/**
- * Re-adds any tracked fake messages that aren't in the store for this channel.
- * Called after Discord fetches a channel's history (LOAD_MESSAGES_SUCCESS),
- * which replaces the store's messages and would otherwise drop our fakes.
- *
- * Must run outside the active Flux dispatch, since receiveMessage dispatches.
- */
-export function reinjectFakeMessages(channelId: string) {
-    const messages = fakeMessagesByChannel.get(channelId);
-    if (!messages?.size) return;
-
-    for (const message of messages.values()) {
-        // skip anything still present, so we don't needlessly re-flag it
-        if (MessageStore.getMessage(channelId, message.id)) continue;
-        MessageActions.receiveMessage(channelId, message);
-    }
 }
 
 export interface FakeFile {
@@ -106,6 +95,20 @@ export async function buildAttachments(files: FakeFile[]): Promise<MessageAttach
     );
 }
 
+/** Builds the raw author json the message record expects from a store user. */
+function toRawUser(user: User): any {
+    return {
+        id: user.id,
+        username: user.username,
+        global_name: (user as any).globalName ?? null,
+        avatar: user.avatar ?? null,
+        avatar_decoration_data: (user as any).avatarDecorationData ?? null,
+        discriminator: user.discriminator ?? "0",
+        bot: !!user.bot,
+        public_flags: (user as any).publicFlags ?? 0,
+    };
+}
+
 /**
  * Locally injects a message that looks like it was sent by `author` in `channelId`.
  * Nothing is actually sent to Discord; the message only exists on this client until reload.
@@ -116,6 +119,7 @@ export function sendFakeMessage(
     content: string,
     attachments: MessageAttachment[]
 ): Message {
+    // sendBotMessage shows it immediately and assigns a real snowflake id.
     const message = sendBotMessage(channelId, {
         author,
         content,
@@ -126,6 +130,73 @@ export function sendFakeMessage(
         flags: 0,
     });
 
-    if (message?.id) track(channelId, message);
+    if (message?.id) {
+        // Keep a raw copy keyed to the same id/timestamp so the fetch patch can
+        // re-insert it in chronological order after a channel refetch.
+        track(channelId, {
+            id: message.id,
+            type: 0,
+            channel_id: channelId,
+            author: toRawUser(author),
+            content,
+            timestamp: new Date(SnowflakeUtils.extractTimestamp(message.id)).toISOString(),
+            edited_timestamp: null,
+            tts: false,
+            mention_everyone: false,
+            mentions: [],
+            mention_roles: [],
+            attachments,
+            embeds: [],
+            reactions: [],
+            pinned: false,
+            flags: 0,
+        });
+    }
+
     return message;
+}
+
+/**
+ * Splices the channel's tracked fake messages into the freshly fetched `messages`
+ * array (newest-first, as Discord delivers it) so they keep their chronological
+ * spot. Only adds a fake if its timestamp falls inside the fetched window, or if
+ * it's newer than everything and this is the latest page of the channel.
+ */
+export function reAddFakeMessages(messages: any[], action: any): any[] {
+    try {
+        const channelId = action?.channelId;
+        const fakes = channelId ? getFakeMessages(channelId) : [];
+        if (!fakes.length || !Array.isArray(messages) || !messages.length) return messages;
+
+        const existing = new Set(messages.map(m => m.id));
+        const firstTime = SnowflakeUtils.extractTimestamp(messages[0].id);
+        const lastTime = SnowflakeUtils.extractTimestamp(messages[messages.length - 1].id);
+        const descending = messages.length < 2 || firstTime >= lastTime;
+        const newest = Math.max(firstTime, lastTime);
+        const oldest = Math.min(firstTime, lastTime);
+        // latest page of the channel is loaded (nothing newer to fetch)
+        const atChannelEnd = !action.hasMoreAfter && !action.isBefore;
+
+        let added = false;
+        for (const fake of fakes) {
+            if (existing.has(fake.id)) continue;
+            const time = SnowflakeUtils.extractTimestamp(fake.id);
+            if ((time >= oldest && time <= newest) || (time > newest && atChannelEnd)) {
+                messages.push(fake);
+                existing.add(fake.id);
+                added = true;
+            }
+        }
+
+        if (added) {
+            messages.sort((a, b) => {
+                const ta = SnowflakeUtils.extractTimestamp(a.id);
+                const tb = SnowflakeUtils.extractTimestamp(b.id);
+                return descending ? tb - ta : ta - tb;
+            });
+        }
+    } catch (e) {
+        console.error("[FakeMessages] failed to re-add fake messages", e);
+    }
+    return messages;
 }

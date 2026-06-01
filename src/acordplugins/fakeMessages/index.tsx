@@ -11,7 +11,7 @@ import type { Channel, Message } from "@vencord/discord-types";
 import { Menu, React } from "@webpack/common";
 
 import { openFakeMessageModal } from "./FakeMessageModal";
-import { deleteFakeMessage, isFakeMessage, reinjectFakeMessages } from "./utils";
+import { deleteFakeMessage, isFakeMessage, reAddFakeMessages } from "./utils";
 
 interface ChannelContextProps {
     channel?: Channel;
@@ -69,7 +69,7 @@ const MessageContextPatch: NavContextMenuPatchCallback = (children, { message }:
 
 export default definePlugin({
     name: "FakeMessages",
-    description: "Locally fake a message (with content and attachments) from another user. Right-click a DM to fake it from the other person, or a server channel to pick anyone from the member cache. Nothing is actually sent.",
+    description: "Locally fake a message (with content and attachments) from another user. Right-click a DM to fake it from the other person (or yourself), or a server channel to pick anyone from the member cache. Nothing is actually sent.",
     authors: [AcordDevs.TheArmagan],
     contextMenus: {
         "user-context": DmContextPatch,
@@ -77,12 +77,18 @@ export default definePlugin({
         "channel-context": ChannelContextPatch,
         "message": MessageContextPatch
     },
-    flux: {
-        // When Discord refetches a channel's history it overwrites the store and
-        // drops our local-only messages. Re-add them once the dispatch settles
-        // (receiveMessage can't run inside the active dispatch).
-        LOAD_MESSAGES_SUCCESS({ channelId }: { channelId: string; }) {
-            setTimeout(() => reinjectFakeMessages(channelId), 0);
+    patches: [
+        // When Discord refetches a channel's history (LOAD_MESSAGES_SUCCESS) it
+        // rebuilds the store from the fetched array, dropping our local fakes.
+        // Splice them back into that array so they keep their chronological spot
+        // instead of being forced to the bottom by a MESSAGE_CREATE re-add.
+        {
+            find: "_tryFetchMessagesCached",
+            replacement: {
+                match: /(?<=type:"LOAD_MESSAGES_SUCCESS",.{1,100}?)messages:(\i)/,
+                replace: "get messages(){return $self.reAddFakeMessages($1,this);}"
+            }
         }
-    }
+    ],
+    reAddFakeMessages
 });
