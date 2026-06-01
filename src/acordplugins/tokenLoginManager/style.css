@@ -1,0 +1,68 @@
+.vc-tlm-container {
+    display: flex;
+    flex-direction: column;
+    color: var(--text-normal);
+}
+
+.vc-tlm-add-fields {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.vc-tlm-empty {
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 12px 0;
+}
+
+.vc-tlm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.vc-tlm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.vc-tlm-row-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.vc-tlm-name {
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--header-primary);
+    width: fit-content;
+}
+
+.vc-tlm-name:hover {
+    text-decoration: underline;
+}
+
+.vc-tlm-token {
+    font-family: var(--font-code, monospace);
+    font-size: 12px;
+    color: var(--text-muted);
+    word-break: break-all;
+}
+
+.vc-tlm-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
