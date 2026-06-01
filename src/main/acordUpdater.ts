@@ -151,6 +151,10 @@ function runInstaller(exePath: string, channel: ReleaseChannel) {
 let started = false;
 
 export async function checkForAcordUpdate() {
+    // Only official, distributed (standalone) builds should self-update.
+    // A locally built / manually injected build is left alone so we don't
+    // clobber it with the release from GitHub.
+    if (!IS_STANDALONE) return;
     // Installer is Windows-only; nothing to do elsewhere.
     if (process.platform !== "win32") return;
     if (IS_DEV) return;
