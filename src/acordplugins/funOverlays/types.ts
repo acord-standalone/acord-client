@@ -85,8 +85,4 @@ export interface Overlay {
     zIndex: number;
 }
 
-export interface RouteContext {
-    guildId: string | null;
-    channelId: string | null;
-    pathname: string;
-}
+export type { RouteContext } from "@acordplugins/_shared/useRouteContext";

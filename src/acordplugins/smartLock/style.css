@@ -1,0 +1,48 @@
+.vc-smartlock-root {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgb(0 0 0 / 35%);
+}
+
+.vc-smartlock-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    box-shadow: 0 8px 32px rgb(0 0 0 / 45%);
+}
+
+.vc-smartlock-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--white);
+}
+
+.vc-smartlock-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.vc-smartlock-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 300px;
+}
+
+.vc-smartlock-error {
+    font-size: 13px;
+    color: var(--text-feedback-critical);
+}
+
+.vc-smartlock-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
