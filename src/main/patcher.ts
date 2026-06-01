@@ -54,6 +54,11 @@ if (!IS_VANILLA) {
         } catch (err) {
             console.error("[Equicord] Failed to install host update hook", err);
         }
+
+        // Check for a newer Acord build and re-install it via the installer.
+        app.whenReady().then(() => {
+            require("./acordUpdater").checkForAcordUpdate().catch(() => { });
+        });
     }
 
     if (process.platform === "win32" && !IS_VESKTOP && !IS_EQUIBOP) {
