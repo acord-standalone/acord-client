@@ -49,10 +49,13 @@ function FakeMessageModal({ channel, onClose, transitionState }: { channel: Chan
     const guildId = channel.guild_id || undefined;
 
     // Candidate authors: every cached guild member for server channels, or the
-    // DM recipient(s) for direct/group messages.
+    // DM recipient(s) plus yourself for direct/group messages.
     const candidateIds = useMemo(() => {
         if (guildId) return GuildMemberStore.getMemberIds(guildId);
-        return channel.recipients ?? [];
+        const selfId = UserStore.getCurrentUser()?.id;
+        const ids = [...(channel.recipients ?? [])];
+        if (selfId && !ids.includes(selfId)) ids.push(selfId);
+        return ids;
     }, [guildId, channel.id]);
 
     const options = useMemo(
