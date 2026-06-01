@@ -8,7 +8,7 @@ import { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { AcordDevs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import type { Channel, Guild, User, VoiceState } from "@vencord/discord-types";
-import { ChannelStore, Menu, PermissionsBits, PermissionStore, React, RestAPI, UserStore, VoiceStateStore } from "@webpack/common";
+import { ChannelStore, GuildStore, Menu, PermissionsBits, PermissionStore, React, RestAPI, UserStore, VoiceStateStore } from "@webpack/common";
 
 interface UserContextProps {
     user: User;
@@ -49,6 +49,10 @@ const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { user, gui
     if (!user || !guildId) return;
     const myId = UserStore.getCurrentUser()?.id;
     if (!myId || user.id === myId) return;
+
+    // Only show it if I can actually move members in this guild
+    const guild = GuildStore.getGuild(guildId);
+    if (!guild || !PermissionStore.can(PermissionsBits.MOVE_MEMBERS, guild)) return;
 
     const [checked, setChecked] = React.useState(isFollowed(guildId, user.id));
 
