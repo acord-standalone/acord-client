@@ -20,6 +20,7 @@ export type ScopeKind =
     | "anyVoice"
     | "anyStage"
     | "anyForum"
+    | "anyDmAndAnyText"
     | "regex";
 
 export interface Scope {

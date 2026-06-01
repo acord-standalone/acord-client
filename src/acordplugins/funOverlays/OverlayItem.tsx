@@ -6,7 +6,7 @@
 
 import { React, ReactDOM, useEffect, useRef, useState } from "@webpack/common";
 
-import { buildSelectorFromElement, cornerPoint, nearestCorner, nearestScreenEdge, pickAnchorAt, resolveAnchor, screenEdgePoint } from "./anchor";
+import { buildSelectorFromElement, computeElementSnap, cornerPoint, isAnchorRenderable, nearestCorner, nearestScreenEdge, resolveAnchor, screenEdgePoint } from "./anchor";
 import { openOverlayEditor } from "./OverlayEditor";
 import { OverlayStore } from "./store";
 import type { AnchorPlacement, FreePlacement, Overlay, ScreenPlacement } from "./types";
@@ -20,11 +20,23 @@ type DragKind = null
     | { kind: "move"; startMouseX: number; startMouseY: number; startX: number; startY: number; }
     | { kind: "resize"; corner: "tl" | "tr" | "bl" | "br"; startMouseX: number; startMouseY: number; startW: number; startH: number; startX: number; startY: number; aspect: number; };
 
-const SNAP_RADIUS = 22;
+interface AnchoredPosition {
+    x: number;
+    y: number;
+    visible: boolean;
+    /** live rect of the anchor element (anchor placement only) — for the highlight */
+    anchorRect: DOMRect | null;
+}
+
+function rectsEqual(a: DOMRect | null, b: DOMRect | null): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    return a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height;
+}
 
 /** Resolve anchored placement into viewport coords for current frame. */
-function useAnchoredPosition(overlay: Overlay): { x: number; y: number; visible: boolean; } {
-    const [pos, setPos] = useState<{ x: number; y: number; visible: boolean; }>(() => ({ x: 0, y: 0, visible: false }));
+function useAnchoredPosition(overlay: Overlay): AnchoredPosition {
+    const [pos, setPos] = useState<AnchoredPosition>(() => ({ x: 0, y: 0, visible: false, anchorRect: null }));
 
     useEffect(() => {
         if (overlay.placement.kind !== "anchor") return;
@@ -33,13 +45,15 @@ function useAnchoredPosition(overlay: Overlay): { x: number; y: number; visible:
         const tick = () => {
             if (stopped) return;
             const el = resolveAnchor(pl.selector);
-            if (!el) {
-                setPos(p => p.visible ? { ...p, visible: false } : p);
+            if (!el || !isAnchorRenderable(el)) {
+                // anchor missing, hidden, or scrolled off-screen — hide instead of
+                // dragging the overlay off-screen with it.
+                setPos(p => (p.visible || p.anchorRect) ? { ...p, visible: false, anchorRect: null } : p);
             } else {
                 const rect = el.getBoundingClientRect();
                 const c = cornerPoint(rect, pl.corner);
-                const next = { x: c.x + pl.offsetX, y: c.y + pl.offsetY, visible: true };
-                setPos(p => (p.x === next.x && p.y === next.y && p.visible) ? p : next);
+                const next: AnchoredPosition = { x: c.x + pl.offsetX, y: c.y + pl.offsetY, visible: true, anchorRect: rect };
+                setPos(p => (p.visible && p.x === next.x && p.y === next.y && rectsEqual(p.anchorRect, rect)) ? p : next);
             }
             raf = requestAnimationFrame(tick);
         };
@@ -53,7 +67,7 @@ function useAnchoredPosition(overlay: Overlay): { x: number; y: number; visible:
         const pl = overlay.placement as ScreenPlacement;
         const update = () => {
             const ref = screenEdgePoint(pl.edge, window.innerWidth, window.innerHeight);
-            setPos({ x: ref.x + pl.offsetX, y: ref.y + pl.offsetY, visible: true });
+            setPos({ x: ref.x + pl.offsetX, y: ref.y + pl.offsetY, visible: true, anchorRect: null });
         };
         update();
         window.addEventListener("resize", update);
@@ -61,9 +75,52 @@ function useAnchoredPosition(overlay: Overlay): { x: number; y: number; visible:
     }, [overlay.placement]);
 
     if (overlay.placement.kind === "free") {
-        return { x: overlay.placement.x, y: overlay.placement.y, visible: true };
+        return { x: overlay.placement.x, y: overlay.placement.y, visible: true, anchorRect: null };
     }
     return pos;
+}
+
+interface AnchorHint { rect: DOMRect; label: string; }
+
+/** Red outline + name badge drawn around the element an overlay is (or would be) snapped to. */
+function AnchorHighlight({ rect, label }: AnchorHint) {
+    return ReactDOM.createPortal(
+        <div
+            className="vc-fun-overlay-anchor-hl"
+            style={{
+                position: "fixed",
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height,
+                border: "2px solid #f23f43",
+                borderRadius: 4,
+                boxSizing: "border-box",
+                pointerEvents: "none",
+                zIndex: 2147483646,
+                boxShadow: "0 0 0 1px rgba(0,0,0,0.4)"
+            }}
+        >
+            <div style={{
+                position: "absolute",
+                top: -20,
+                left: -2,
+                maxWidth: 320,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                background: "#f23f43",
+                color: "white",
+                font: "600 11px var(--font-display, sans-serif)",
+                padding: "1px 6px",
+                borderRadius: 3,
+                pointerEvents: "none"
+            }}>
+                {label}
+            </div>
+        </div>,
+        document.body
+    );
 }
 
 export function OverlayItem({ overlay, editMode }: Props) {
@@ -76,6 +133,9 @@ export function OverlayItem({ overlay, editMode }: Props) {
 
     const liveRef = useRef({ x: null as number | null, y: null as number | null, w: null as number | null, h: null as number | null });
     liveRef.current = { x: liveX, y: liveY, w: liveW, h: liveH };
+
+    // element the overlay would snap to right now while being dragged (live preview)
+    const [hoverAnchor, setHoverAnchor] = useState<AnchorHint | null>(null);
 
     const anchored = useAnchoredPosition(overlay);
 
@@ -94,8 +154,14 @@ export function OverlayItem({ overlay, editMode }: Props) {
         if (!drag) return;
         const onMove = (e: MouseEvent) => {
             if (drag.kind === "move") {
-                setLiveX(drag.startX + (e.clientX - drag.startMouseX));
-                setLiveY(drag.startY + (e.clientY - drag.startMouseY));
+                const nx = drag.startX + (e.clientX - drag.startMouseX);
+                const ny = drag.startY + (e.clientY - drag.startMouseY);
+                setLiveX(nx);
+                setLiveY(ny);
+                // preview the element (and snapped position) we'd attach to right now
+                const snap = computeElementSnap(nx, ny, overlay.width, overlay.height);
+                const info = snap ? buildSelectorFromElement(snap.el) : null;
+                setHoverAnchor(snap && info ? { rect: snap.el.getBoundingClientRect(), label: info.label } : null);
             } else {
                 const dx = e.clientX - drag.startMouseX;
                 const dy = e.clientY - drag.startMouseY;
@@ -166,6 +232,7 @@ export function OverlayItem({ overlay, editMode }: Props) {
             }
             setDrag(null);
             setLiveX(null); setLiveY(null); setLiveW(null); setLiveH(null);
+            setHoverAnchor(null);
         };
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
@@ -176,33 +243,31 @@ export function OverlayItem({ overlay, editMode }: Props) {
     }, [drag]);
 
     function commitMove(finalX: number, finalY: number, finalW: number, finalH: number) {
-        // try to snap to an underlying element near the center of the overlay
-        const cx = finalX + finalW / 2;
-        const cy = finalY + finalH / 2;
-        // hide overlay layer's hit-testing briefly by elevating elementsFromPoint excluding our root (handled in pickAnchorAt)
-        const candidate = pickAnchorAt(cx, cy);
-        if (candidate) {
-            const info = buildSelectorFromElement(candidate);
+        // Priority: anchor to a Discord element, snapping the overlay's edges/center
+        // to the element's edges/center (larger elements have a wider magnetic pull).
+        // computeElementSnap returns the chosen element and the snapped position.
+        const snap = computeElementSnap(finalX, finalY, finalW, finalH);
+        if (snap) {
+            const info = buildSelectorFromElement(snap.el);
             if (info) {
-                const rect = candidate.getBoundingClientRect();
-                const corner = nearestCorner(rect, finalX, finalY);
+                const rect = snap.el.getBoundingClientRect();
+                // anchor to the element corner nearest the (snapped) overlay top-left and
+                // store the exact offset, so the overlay tracks that corner on layout changes.
+                const corner = nearestCorner(rect, snap.x, snap.y);
                 const cp = cornerPoint(rect, corner);
-                const dist = Math.hypot(cp.x - finalX, cp.y - finalY);
-                if (dist < SNAP_RADIUS) {
-                    const placement: AnchorPlacement = {
-                        kind: "anchor",
-                        selector: info.selector,
-                        corner,
-                        offsetX: Math.round(finalX - cp.x),
-                        offsetY: Math.round(finalY - cp.y),
-                        anchorLabel: info.label
-                    };
-                    OverlayStore.update(overlay.id, { placement });
-                    return;
-                }
+                const placement: AnchorPlacement = {
+                    kind: "anchor",
+                    selector: info.selector,
+                    corner,
+                    offsetX: Math.round(snap.x - cp.x),
+                    offsetY: Math.round(snap.y - cp.y),
+                    anchorLabel: info.label
+                };
+                OverlayStore.update(overlay.id, { placement });
+                return;
             }
         }
-        // try to snap to the nearest screen corner/edge
+        // No meaningful element under the overlay — try to snap to the nearest screen corner/edge
         const edge = nearestScreenEdge(finalX, finalY, finalW, finalH);
         if (edge !== null) {
             const ref = screenEdgePoint(edge, window.innerWidth, window.innerHeight);
@@ -290,54 +355,64 @@ export function OverlayItem({ overlay, editMode }: Props) {
         zIndex: 2
     };
 
-    return ReactDOM.createPortal(
-        <div className="vc-fun-overlay-item" style={style} onMouseDown={startMove}>
-            {overlay.url
-                ? <img src={overlay.url} alt="" draggable={false} style={imgStyle} />
-                : (
-                    <div style={{
-                        width: "100%", height: "100%",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        background: "rgba(88,101,242,0.15)",
-                        border: "1px dashed var(--brand-500, #5865F2)",
-                        color: "var(--text-muted)",
-                        fontSize: 12,
-                        textAlign: "center",
-                        padding: 4,
-                        boxSizing: "border-box"
-                    }}>
-                        {overlay.name} (no url)
-                    </div>
-                )}
-            {interactive && (
-                <>
-                    <div style={{ ...handleStyleBase, left: -6, top: -6, cursor: "nwse-resize" }} onMouseDown={startResize("tl")} />
-                    <div style={{ ...handleStyleBase, right: -6, top: -6, cursor: "nesw-resize" }} onMouseDown={startResize("tr")} />
-                    <div style={{ ...handleStyleBase, left: -6, bottom: -6, cursor: "nesw-resize" }} onMouseDown={startResize("bl")} />
-                    <div style={{ ...handleStyleBase, right: -6, bottom: -6, cursor: "nwse-resize" }} onMouseDown={startResize("br")} />
-                    <div
-                        title="Edit overlay"
-                        onMouseDown={e => { e.stopPropagation(); e.preventDefault(); }}
-                        onClick={e => { e.stopPropagation(); openOverlayEditor(overlay.id); }}
-                        style={{
-                            position: "absolute",
-                            top: -28,
-                            right: 0,
-                            padding: "2px 8px",
-                            background: "var(--background-floating, #18191c)",
-                            color: "var(--text-normal, white)",
-                            borderRadius: 4,
-                            font: "12px var(--font-display, sans-serif)",
-                            cursor: "pointer",
-                            pointerEvents: "auto",
-                            border: "1px solid var(--background-modifier-accent, #4f545c)"
-                        }}
-                    >
-                        ⚙ {overlay.name}
-                    </div>
-                </>
+    // While dragging an overlay, show a red outline + name around the element it
+    // would snap to. Only during the drag — it clears as soon as you drop.
+    const highlight: AnchorHint | null =
+        editMode && drag?.kind === "move" ? hoverAnchor : null;
+
+    return (
+        <>
+            {highlight && <AnchorHighlight rect={highlight.rect} label={highlight.label} />}
+            {ReactDOM.createPortal(
+                <div className="vc-fun-overlay-item" style={style} onMouseDown={startMove}>
+                    {overlay.url
+                        ? <img src={overlay.url} alt="" draggable={false} style={imgStyle} />
+                        : (
+                            <div style={{
+                                width: "100%", height: "100%",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                background: "rgba(88,101,242,0.15)",
+                                border: "1px dashed var(--brand-500, #5865F2)",
+                                color: "var(--text-muted)",
+                                fontSize: 12,
+                                textAlign: "center",
+                                padding: 4,
+                                boxSizing: "border-box"
+                            }}>
+                                {overlay.name} (no url)
+                            </div>
+                        )}
+                    {interactive && (
+                        <>
+                            <div style={{ ...handleStyleBase, left: -6, top: -6, cursor: "nwse-resize" }} onMouseDown={startResize("tl")} />
+                            <div style={{ ...handleStyleBase, right: -6, top: -6, cursor: "nesw-resize" }} onMouseDown={startResize("tr")} />
+                            <div style={{ ...handleStyleBase, left: -6, bottom: -6, cursor: "nesw-resize" }} onMouseDown={startResize("bl")} />
+                            <div style={{ ...handleStyleBase, right: -6, bottom: -6, cursor: "nwse-resize" }} onMouseDown={startResize("br")} />
+                            <div
+                                title="Edit overlay"
+                                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); }}
+                                onClick={e => { e.stopPropagation(); openOverlayEditor(overlay.id); }}
+                                style={{
+                                    position: "absolute",
+                                    top: -28,
+                                    right: 0,
+                                    padding: "2px 8px",
+                                    background: "var(--background-floating, #18191c)",
+                                    color: "var(--text-normal, white)",
+                                    borderRadius: 4,
+                                    font: "12px var(--font-display, sans-serif)",
+                                    cursor: "pointer",
+                                    pointerEvents: "auto",
+                                    border: "1px solid var(--background-modifier-accent, #4f545c)"
+                                }}
+                            >
+                                ⚙ {overlay.name}
+                            </div>
+                        </>
+                    )}
+                </div>,
+                document.body
             )}
-        </div>,
-        document.body
+        </>
     );
 }

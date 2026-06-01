@@ -53,6 +53,11 @@ export function matchScope(scope: Scope, ctx: RouteContext): boolean {
             const t = ChannelStore.getChannel(ctx.channelId)?.type;
             return t === ChannelType.GUILD_FORUM;
         }
+        case "anyDmAndAnyText": {
+            if (!ctx.channelId) return false;
+            const t = ChannelStore.getChannel(ctx.channelId)?.type;
+            return t === ChannelType.DM || t === ChannelType.GROUP_DM || t === ChannelType.GUILD_TEXT || t === ChannelType.GUILD_ANNOUNCEMENT;
+        }
         case "regex": {
             if (!scope.value) return false;
             try {
@@ -83,6 +88,7 @@ export function describeScope(scope: Scope): string {
         case "anyVoice": return "Any voice channel";
         case "anyStage": return "Any stage channel";
         case "anyForum": return "Any forum channel";
+        case "anyDmAndAnyText": return "Any DM or text channel";
         case "regex": return `Path matches /${scope.value ?? ""}/`;
     }
 }

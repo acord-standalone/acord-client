@@ -63,7 +63,12 @@ export const OverlayStore = {
         emit();
         void persist();
     },
-    update(id: string, patch: Partial<Overlay>) {
+    /**
+     * Apply a patch to an overlay. Pass `persistChange = false` for live previews
+     * (e.g. dragging a slider in the editor) to update the UI without writing to
+     * disk on every change; persist once when the edit is committed.
+     */
+    update(id: string, patch: Partial<Overlay>, persistChange = true) {
         let changed = false;
         overlays = overlays.map(o => {
             if (o.id !== id) return o;
@@ -72,7 +77,7 @@ export const OverlayStore = {
         });
         if (changed) {
             emit();
-            void persist();
+            if (persistChange) void persist();
         }
     },
     remove(id: string) {
