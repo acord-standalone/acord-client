@@ -7,6 +7,7 @@
 import { BaseText } from "@components/BaseText";
 import { Button } from "@components/Button";
 import { classNameFactory } from "@utils/css";
+import { openUserProfile } from "@utils/discord";
 import { formatDurationMs } from "@utils/text";
 import { Avatar, ChannelStore, GuildStore, IconUtils, Modal, moment, openModal, React, ScrollerThin, useEffect, UserStore, useState } from "@webpack/common";
 
@@ -74,7 +75,7 @@ function channelActionText(e: ChannelLogEntry): string {
     }
 }
 
-function ChannelLogList({ entries }: { entries: ChannelLogEntry[]; }) {
+function ChannelLogList({ entries, onClose }: { entries: ChannelLogEntry[]; onClose: () => void; }) {
     if (entries.length === 0) return <BaseText size="sm" color="text-muted" className={cl("placeholder")}>No recent activity.</BaseText>;
 
     return (
@@ -83,7 +84,12 @@ function ChannelLogList({ entries }: { entries: ChannelLogEntry[]; }) {
                 const name = e.nick ?? e.user?.displayName ?? e.user?.username ?? e.userId;
 
                 return (
-                    <div key={e.sessionId + e.ts} className={cl("log-row")}>
+                    <div
+                        key={e.sessionId + e.ts}
+                        className={cl("log-row", "log-clickable")}
+                        role="button"
+                        onClick={() => { onClose(); openUserProfile(e.userId); }}
+                    >
                         <Avatar src={avatarUrl(e.userId)} size="SIZE_24" />
                         <div className={cl("log-main")}>
                             <BaseText size="sm" weight="medium" className={cl("log-title")}>{name}</BaseText>
@@ -135,7 +141,7 @@ function LogsModal({ userId, channelId, initialTab, onClose, transitionState }: 
             <ScrollerThin className={cl("log-list")}>
                 {tab === "user"
                     ? (userLog == null ? loading : <UserLogList entries={userLog} />)
-                    : (channelLog == null ? loading : <ChannelLogList entries={channelLog} />)}
+                    : (channelLog == null ? loading : <ChannelLogList entries={channelLog} onClose={onClose} />)}
             </ScrollerThin>
         </Modal>
     );

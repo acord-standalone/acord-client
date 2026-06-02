@@ -150,6 +150,10 @@
     background: var(--background-modifier-hover);
 }
 
+.vc-vi-log-clickable {
+    cursor: pointer;
+}
+
 .vc-vi-log-main {
     display: flex;
     flex-direction: column;
