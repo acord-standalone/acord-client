@@ -32,13 +32,13 @@ import { acordDevs, getEntryPoint, isPluginFile, parseAcordDevs, parseDevs, pars
 
     let dirs: string[];
     if (acordFlag) {
-        dirs = ["src/acordplugins/_core", "src/acordplugins"];
+        dirs = ["src/acordplugins/_core", "src/acordplugins/_api", "src/acordplugins"];
     } else if (equicordFlag) {
         dirs = ["src/equicordplugins/_core", "src/equicordplugins"];
     } else if (vencordFlag) {
         dirs = ["src/plugins", "src/plugins/_core"];
     } else {
-        dirs = ["src/plugins", "src/plugins/_core", "src/equicordplugins/_core", "src/equicordplugins", "src/acordplugins/_core", "src/acordplugins"];
+        dirs = ["src/plugins", "src/plugins/_core", "src/equicordplugins/_core", "src/equicordplugins", "src/acordplugins/_core", "src/acordplugins/_api", "src/acordplugins"];
     }
 
     const outputPath = args.find(a => !a.startsWith("--")) ?? null;

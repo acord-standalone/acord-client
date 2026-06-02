@@ -85,7 +85,7 @@ export default definePlugin({
         {
             find: "_tryFetchMessagesCached",
             replacement: {
-                match: /(?<=type:"LOAD_MESSAGES_SUCCESS",.{1,100}?)messages:(\i)/,
+                match: /(?<=type:"LOAD_MESSAGES_SUCCESS",.{0,100})messages:(\i)/,
                 replace: "get messages(){return $self.reAddFakeMessages($1,this);}"
             }
         }

@@ -1,0 +1,235 @@
+.vc-vi-speaker {
+    color: var(--interactive-icon-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vc-vi-clickable {
+    cursor: pointer;
+}
+
+.vc-vi-clickable:hover {
+    color: var(--interactive-icon-hover);
+}
+
+.vc-vi-profile-speaker {
+    width: var(--custom-nickname-icon-size);
+    height: var(--custom-nickname-icon-size);
+}
+
+.vc-vi-tooltip-container {
+    max-width: 50vw;
+}
+
+.vc-vi-tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Modal */
+.vc-vi-channel-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vc-vi-guild-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-subtle, transparent);
+}
+
+.vc-vi-guild-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-round, 50%);
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.vc-vi-guild-acronym {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-tertiary);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-default);
+    text-align: center;
+    line-height: 1.1;
+}
+
+.vc-vi-guild-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vc-vi-channel-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md, 8px);
+    background: var(--background-secondary);
+    border: 1px solid var(--border-subtle, transparent);
+    overflow: hidden;
+}
+
+.vc-vi-channel-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    color: var(--header-secondary);
+}
+
+.vc-vi-channel-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.vc-vi-count-pill {
+    flex-shrink: 0;
+    min-width: 20px;
+    padding: 1px 8px;
+    border-radius: var(--radius-round, 10px);
+    background: var(--background-tertiary);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.vc-vi-channel-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Logs modal */
+.vc-vi-log-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.vc-vi-log-tabs > * {
+    flex: 1;
+}
+
+.vc-vi-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 320px;
+}
+
+.vc-vi-log-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm, 6px);
+}
+
+.vc-vi-log-row:hover {
+    background: var(--background-modifier-hover);
+}
+
+.vc-vi-log-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.vc-vi-log-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vc-vi-members {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 264px;
+    padding: 4px;
+    padding-top: 0;
+}
+
+.vc-vi-placeholder {
+    padding: 8px 8px 12px;
+}
+
+.vc-vi-member {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.vc-vi-member:hover {
+    background: var(--background-modifier-hover);
+}
+
+.vc-vi-member:active {
+    background: var(--background-modifier-active);
+}
+
+.vc-vi-member-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vc-vi-member-duration {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+
+.vc-vi-member-state {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    color: var(--interactive-icon-default);
+}
+
+/* Server-enforced mute/deaf shows red; self mute/deaf stays the default grey. */
+.vc-vi-state-danger,
+.vc-vi-state-danger:hover {
+    color: var(--status-danger);
+}
+
+.vc-vi-live-badge {
+    flex-shrink: 0;
+    padding: 0 5px;
+    border-radius: var(--radius-xs, 4px);
+    background: var(--status-danger);
+    color: var(--white-500, #fff);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    letter-spacing: 0.02em;
+}
