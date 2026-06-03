@@ -16,7 +16,12 @@ let prevServerDeaf = false;
 const settings = definePluginSettings({
     alwaysUnmute: {
         type: OptionType.BOOLEAN,
-        description: "Don't ask — automatically undo server mute/deafen without showing a confirmation",
+        description: "Don't ask — automatically undo server mute without showing a confirmation",
+        default: false,
+    },
+    alwaysUndeafen: {
+        type: OptionType.BOOLEAN,
+        description: "Don't ask — automatically undo server deafen without showing a confirmation",
         default: false,
     }
 });
@@ -62,24 +67,37 @@ export default definePlugin({
 
             if (!canUnmute && !canUndeafen) return;
 
-            const doUndo = async () => {
-                const body: Record<string, boolean> = {};
-                if (canUnmute) body.mute = false;
-                if (canUndeafen) body.deaf = false;
+            const undo = async (body: Record<string, boolean>) => {
                 await RestAPI.patch({
                     url: `/guilds/${guildId}/members/@me`,
                     body
                 });
             };
 
-            if (settings.store.alwaysUnmute) {
-                doUndo();
-                return;
-            }
+            const autoUnmute = canUnmute && settings.store.alwaysUnmute;
+            const autoUndeafen = canUndeafen && settings.store.alwaysUndeafen;
+
+            // Auto-undo whatever the user opted into without asking.
+            const autoBody: Record<string, boolean> = {};
+            if (autoUnmute) autoBody.mute = false;
+            if (autoUndeafen) autoBody.deaf = false;
+            if (Object.keys(autoBody).length) undo(autoBody);
+
+            // Ask about whatever is left.
+            const askUnmute = canUnmute && !autoUnmute;
+            const askUndeafen = canUndeafen && !autoUndeafen;
+            if (!askUnmute && !askUndeafen) return;
+
+            const doUndo = async () => {
+                const body: Record<string, boolean> = {};
+                if (askUnmute) body.mute = false;
+                if (askUndeafen) body.deaf = false;
+                await undo(body);
+            };
 
             const actions = [
-                ...(canUnmute ? ["muted"] : []),
-                ...(canUndeafen ? ["deafened"] : [])
+                ...(askUnmute ? ["muted"] : []),
+                ...(askUndeafen ? ["deafened"] : [])
             ].join(" and ");
 
             Alerts.show({
