@@ -13,6 +13,13 @@ env:
 permissions:
     contents: write
 
+# Shares the `latest` release (and asset names) with buildBranches.yml. Use the
+# same concurrency group so the two workflows can never upload at once and race
+# into "ReleaseAsset.name already exists" (HTTP 422). Serialize; let each finish.
+concurrency:
+    group: upload-latest-release
+    cancel-in-progress: false
+
 jobs:
     Build:
         name: Build Acord
