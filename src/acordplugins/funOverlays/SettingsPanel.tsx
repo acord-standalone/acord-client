@@ -9,6 +9,7 @@ import { FormSwitch } from "@components/FormSwitch";
 import { Heading } from "@components/Heading";
 import { Paragraph } from "@components/Paragraph";
 import { Switch } from "@components/Switch";
+import { copyToClipboard, readClipboard } from "@utils/clipboard";
 import { React, showToast, Toasts, useEffect, useState } from "@webpack/common";
 
 import { EditModeStore } from "./editMode";
@@ -103,7 +104,7 @@ export function SettingsPanel({ onClose }: { onClose?: () => void; } = {}) {
                         const all = OverlayStore.getAll();
                         const json = JSON.stringify(all, null, 2);
                         try {
-                            await navigator.clipboard.writeText(json);
+                            await copyToClipboard(json);
                             showToast(`Copied ${all.length} overlay(s) to clipboard`, Toasts.Type.SUCCESS);
                         } catch {
                             showToast("Couldn't write to clipboard", Toasts.Type.FAILURE);
@@ -117,7 +118,7 @@ export function SettingsPanel({ onClose }: { onClose?: () => void; } = {}) {
                     onClick={async () => {
                         let text = "";
                         try {
-                            text = await navigator.clipboard.readText();
+                            text = await readClipboard();
                         } catch {
                             showToast("Couldn't read from clipboard", Toasts.Type.FAILURE);
                             return;
