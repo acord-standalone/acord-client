@@ -9,12 +9,12 @@ import { FormSwitch } from "@components/FormSwitch";
 import { Heading } from "@components/Heading";
 import { Paragraph } from "@components/Paragraph";
 import { Switch } from "@components/Switch";
-import { React, useEffect, useState } from "@webpack/common";
+import { React, showToast, Toasts, useEffect, useState } from "@webpack/common";
 
 import { EditModeStore } from "./editMode";
 import { openOverlayEditor } from "./OverlayEditor";
 import { describeScope } from "./routing";
-import { defaultOverlay, OverlayStore } from "./store";
+import { defaultOverlay, newId, OverlayStore } from "./store";
 import type { Overlay } from "./types";
 
 function Row({ overlay }: { overlay: Overlay; }) {
@@ -99,9 +99,15 @@ export function SettingsPanel({ onClose }: { onClose?: () => void; } = {}) {
                 </Button>
                 <Button
                     variant="secondary"
-                    onClick={() => {
-                        const json = JSON.stringify(OverlayStore.getAll(), null, 2);
-                        navigator.clipboard?.writeText(json);
+                    onClick={async () => {
+                        const all = OverlayStore.getAll();
+                        const json = JSON.stringify(all, null, 2);
+                        try {
+                            await navigator.clipboard.writeText(json);
+                            showToast(`Copied ${all.length} overlay(s) to clipboard`, Toasts.Type.SUCCESS);
+                        } catch {
+                            showToast("Couldn't write to clipboard", Toasts.Type.FAILURE);
+                        }
                     }}
                 >
                     Copy all as JSON
@@ -109,12 +115,48 @@ export function SettingsPanel({ onClose }: { onClose?: () => void; } = {}) {
                 <Button
                     variant="secondary"
                     onClick={async () => {
-                        const text = await navigator.clipboard?.readText().catch(() => "");
-                        if (!text) return;
+                        let text = "";
                         try {
-                            const parsed = JSON.parse(text);
-                            if (Array.isArray(parsed)) OverlayStore.replaceAll(parsed);
-                        } catch { /* ignore */ }
+                            text = await navigator.clipboard.readText();
+                        } catch {
+                            showToast("Couldn't read from clipboard", Toasts.Type.FAILURE);
+                            return;
+                        }
+                        if (!text.trim()) {
+                            showToast("Clipboard is empty", Toasts.Type.FAILURE);
+                            return;
+                        }
+
+                        let parsed: unknown;
+                        try {
+                            parsed = JSON.parse(text);
+                        } catch {
+                            showToast("Clipboard doesn't contain valid JSON", Toasts.Type.FAILURE);
+                            return;
+                        }
+                        if (!Array.isArray(parsed)) {
+                            showToast("Expected a JSON array of overlays", Toasts.Type.FAILURE);
+                            return;
+                        }
+
+                        // Keep only object entries and ensure every overlay has a unique id
+                        // so a malformed export can't clobber or collide with existing ones.
+                        const seen = new Set<string>();
+                        const imported = parsed
+                            .filter((o): o is Overlay => o != null && typeof o === "object")
+                            .map(o => {
+                                const id = typeof o.id === "string" && o.id && !seen.has(o.id) ? o.id : newId();
+                                seen.add(id);
+                                return { ...o, id };
+                            });
+
+                        if (imported.length === 0) {
+                            showToast("No valid overlays found in clipboard", Toasts.Type.FAILURE);
+                            return;
+                        }
+
+                        OverlayStore.replaceAll(imported);
+                        showToast(`Imported ${imported.length} overlay(s)`, Toasts.Type.SUCCESS);
                     }}
                 >
                     Import JSON from clipboard
